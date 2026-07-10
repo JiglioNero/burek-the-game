@@ -216,6 +216,31 @@
       border-color: #f7d51d;
     }
 
+    #menu-back-btn {
+      display: none;
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: max(14px, env(safe-area-inset-left));
+      z-index: 100;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      background: #333;
+      color: #f7d51d;
+      border: 2px solid #666;
+      padding: 8px 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    #menu-back-btn.visible {
+      display: block;
+    }
+
+    #menu-back-btn:hover {
+      border-color: #f7d51d;
+    }
+
     #mobile-controls {
       display: none;
       position: fixed;
@@ -331,6 +356,7 @@
   </style>
 </head>
 <body>
+  <button id="menu-back-btn" type="button" aria-label="Back to menu">MENU</button>
   <button id="mute-btn" title="Звук вкл/выкл">🔊</button>
   <div id="mobile-controls" aria-hidden="true">
     <div id="boost-btn" role="button" aria-label="Boost">BOOST</div>
@@ -392,6 +418,7 @@
     const startBtn = document.getElementById('start-btn');
     const appEl = document.getElementById('app');
     const muteBtn = document.getElementById('mute-btn');
+    const menuBackBtn = document.getElementById('menu-back-btn');
     const mobileControls = document.getElementById('mobile-controls');
     const boostBtn = document.getElementById('boost-btn');
     const btnLeft = document.getElementById('btn-left');
@@ -446,6 +473,17 @@
       screenEl.classList.remove('hidden');
       overlay.classList.remove('hidden');
       setMobileControlsVisible(false);
+      setMenuBackVisible(false);
+    }
+
+    function setMenuBackVisible(on) {
+      menuBackBtn.classList.toggle('visible', on);
+    }
+
+    function returnToMenu() {
+      running = false;
+      for (const k in keys) delete keys[k];
+      showScreen(screenStart);
     }
 
     function isTouchUi() {
