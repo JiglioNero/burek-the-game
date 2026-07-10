@@ -221,24 +221,28 @@
       position: fixed;
       top: max(14px, env(safe-area-inset-top));
       left: max(14px, env(safe-area-inset-left));
-      z-index: 100;
+      z-index: 200;
       font-family: 'Press Start 2P', monospace;
-      font-size: 8px;
-      background: #333;
-      color: #f7d51d;
-      border: 2px solid #666;
-      padding: 8px 10px;
+      font-size: 10px;
+      background: #e74c3c;
+      color: #fff;
+      border: 3px solid #922b21;
+      border-bottom-width: 5px;
+      padding: 10px 12px;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
+      min-height: 44px;
+      min-width: 44px;
     }
 
     #menu-back-btn.visible {
-      display: block;
+      display: block !important;
     }
 
-    #menu-back-btn:hover {
-      border-color: #f7d51d;
+    #menu-back-btn:active {
+      border-bottom-width: 2px;
+      transform: translateY(3px);
     }
 
     #mobile-controls {
@@ -356,7 +360,7 @@
   </style>
 </head>
 <body>
-  <button id="menu-back-btn" type="button" aria-label="Back to menu">MENU</button>
+  <button id="menu-back-btn" type="button" aria-label="Back to menu" aria-hidden="true">← MENU</button>
   <button id="mute-btn" title="Звук вкл/выкл">🔊</button>
   <div id="mobile-controls" aria-hidden="true">
     <div id="boost-btn" role="button" aria-label="Boost">BOOST</div>
@@ -477,7 +481,9 @@
     }
 
     function setMenuBackVisible(on) {
-      menuBackBtn.classList.toggle('visible', on);
+      menuBackBtn.classList.toggle('visible', !!on);
+      menuBackBtn.style.display = on ? 'block' : 'none';
+      menuBackBtn.setAttribute('aria-hidden', on ? 'false' : 'true');
     }
 
     function returnToMenu() {
@@ -775,11 +781,13 @@
       running = true;
       overlay.classList.add('hidden');
       setMobileControlsVisible(true);
+      setMenuBackVisible(true);
     }
 
     function gameOver() {
       running = false;
       setMobileControlsVisible(false);
+      setMenuBackVisible(false);
       playGameOverSound();
       finalScoreText.innerHTML = `Total BUREK'S: <span style="color:#f7d51d">${score}</span><br>Level: <span style="color:#6bb8e8">${level}</span>`;
       nameInput.value = '';
@@ -1248,6 +1256,12 @@
 
     startBtn.addEventListener('click', () => {
       startGame();
+    });
+
+    menuBackBtn.addEventListener('click', e => {
+      e.preventDefault();
+      if (!running) return;
+      returnToMenu();
     });
 
     submitNameBtn.addEventListener('click', submitName);
