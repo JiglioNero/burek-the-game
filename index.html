@@ -925,9 +925,9 @@
 
     function drawHUD() {
       ctx.fillStyle = '#fff';
-      ctx.font = '10px "Press Start 2P"';
+      ctx.font = '20px "Press Start 2P"';
       ctx.textAlign = 'left';
-      ctx.fillText('♥'.repeat(lives), 12, 22);
+      ctx.fillText('♥'.repeat(lives), 12, 36);
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#6bb8e8';
@@ -936,13 +936,13 @@
 
       ctx.textAlign = 'right';
       ctx.fillStyle = '#f7d51d';
-      ctx.font = '10px "Press Start 2P"';
-      ctx.fillText(String(score), W - 12, 22);
+      ctx.font = '20px "Press Start 2P"';
+      ctx.fillText(String(score), W - 12, 36);
       ctx.textAlign = 'left';
 
       // energy bar
-      const barX = 12, barY = 30, barW = 110, barH = 8;
-      drawRect(barX - 2, barY - 2, barW + 4, barH + 4, '#1a0f08');
+      const barX = 12, barY = 48, barW = 220, barH = 16;
+      drawRect(barX - 4, barY - 4, barW + 8, barH + 8, '#1a0f08');
       drawRect(barX, barY, barW, barH, '#3a2010');
       const fillW = Math.max(0, (energy / MAX_ENERGY) * barW);
       const barColor = energy < 25 ? '#e74c3c' : (boosting ? '#f7d51d' : '#5fb85f');
