@@ -560,6 +560,7 @@
     const ENERGY_REGEN = 0.35;
     const BOOST_MULTIPLIER = 1.9;
     const SPEED_EASING = 0.025;
+    const PLAYER_DRAW_OFFSET_Y = 36;
     const LEVEL_SCORE_STEP = 100;
     const BALL_SPAWN_INTERVAL_MS = 10000;
     const UNIFORM_BOOST_DURATION_MS = 5000;
@@ -973,20 +974,26 @@
     function drawTrail() {
       for (const t of trail) {
         const cx = t.x + player.w / 2;
-        const y = GROUND_Y;
+        const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
         ctx.globalAlpha = t.alpha;
-        drawRect(cx - 17, y - 42, 34, 68, '#f7d51d');
+        drawRect(cx - 17, y - 72, 34, 72, '#f7d51d');
         ctx.globalAlpha = 1;
       }
     }
 
-    function drawPlayer() {
-      const x = player.x;
-      const y = GROUND_Y;
-      const cx = x + player.w / 2;
+    function drawPlayerLegacy() {
+      const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
+      const cx = player.x + player.w / 2;
       const uniformIsYellow = playerUniform === 'yellow';
-      const vestColor = uniformIsYellow ? '#d6a51f' : '#2148c8';
-      const trimColor = uniformIsYellow ? '#ffe066' : '#f7d51d';
+      const HAT = '#e66119';
+      const HAIR = '#5d3a1a';
+      const SKIN = '#e8c1a0';
+      const COAT = uniformIsYellow ? '#d6a51f' : '#232b3b';
+      const SASH = uniformIsYellow ? '#ffe066' : '#ffffff';
+      const SASH_S = uniformIsYellow ? '#b98612' : '#c8c8c8';
+      const PANTS = '#d81e1e';
+      const BOOT = '#0a0a0a';
+      const CUFF = '#000000';
 
       // head
       drawRect(cx - 9, y - 32, 18, 16, '#f0b98a');
@@ -1012,13 +1019,120 @@
       drawRect(cx + 11, y - 16, 4, 2, '#111');
 
       // simple vest/body
-      drawRect(cx - 17, y - 14, 34, 20, vestColor);
-      drawRect(cx - 3, y - 14, 6, 20, trimColor);
+      drawRect(cx - 17, y - 14, 34, 20, COAT);
+      drawRect(cx - 3, y - 14, 6, 20, SASH);
 
       // basket
       drawRect(cx - 22, y + 6, 44, 10, '#8b4513');
       drawRect(cx - 24, y + 16, 48, 6, '#6b3410');
       drawRect(cx - 20, y + 22, 40, 4, '#5a2d0c');
+    }
+
+    function drawPlayer() {
+      const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
+      const cx = player.x + player.w / 2;
+      const uniformIsYellow = playerUniform === 'yellow';
+      const HAT = '#e66119';
+      const HAIR = '#5d3a1a';
+      const SKIN = '#e8c1a0';
+      const COAT = uniformIsYellow ? '#d6a51f' : '#232b3b';
+      const SASH = uniformIsYellow ? '#ffe066' : '#ffffff';
+      const SASH_S = uniformIsYellow ? '#b98612' : '#c8c8c8';
+      const PANTS = '#d81e1e';
+      const BOOT = '#0a0a0a';
+      const CUFF = '#000000';
+
+      // boots (feet on ground)
+      drawRect(cx - 12, y - 8, 10, 8, BOOT);
+      drawRect(cx + 2, y - 8, 10, 8, BOOT);
+      drawRect(cx - 14, y - 2, 6, 2, BOOT);
+      drawRect(cx + 8, y - 2, 6, 2, BOOT);
+
+      // red pants
+      drawRect(cx - 9, y - 18, 8, 12, PANTS);
+      drawRect(cx + 1, y - 18, 8, 12, PANTS);
+
+      // coat body (A-line)
+      drawRect(cx - 14, y - 40, 28, 26, COAT);
+      drawRect(cx - 16, y - 22, 32, 10, COAT);
+      drawRect(cx - 17, y - 16, 34, 4, COAT);
+
+      // arms + black ruffled cuffs + hands
+      drawRect(cx - 20, y - 38, 7, 16, COAT);
+      drawRect(cx + 13, y - 38, 7, 16, COAT);
+      drawRect(cx - 22, y - 24, 10, 6, CUFF);
+      drawRect(cx - 23, y - 25, 3, 3, CUFF);
+      drawRect(cx - 14, y - 25, 3, 3, CUFF);
+      drawRect(cx - 24, y - 22, 3, 3, CUFF);
+      drawRect(cx + 12, y - 24, 10, 6, CUFF);
+      drawRect(cx + 11, y - 25, 3, 3, CUFF);
+      drawRect(cx + 20, y - 25, 3, 3, CUFF);
+      drawRect(cx + 21, y - 22, 3, 3, CUFF);
+      drawRect(cx - 20, y - 18, 5, 4, SKIN);
+      drawRect(cx + 15, y - 18, 5, 4, SKIN);
+
+      // white collar
+      drawRect(cx - 5, y - 42, 10, 3, SASH);
+      drawRect(cx - 6, y - 41, 3, 3, SASH);
+      drawRect(cx + 3, y - 41, 3, 3, SASH);
+
+      // head
+      drawRect(cx - 8, y - 54, 16, 14, SKIN);
+
+      // curly brown hair
+      drawRect(cx - 11, y - 56, 22, 6, HAIR);
+      drawRect(cx - 13, y - 52, 5, 8, HAIR);
+      drawRect(cx + 8, y - 52, 5, 8, HAIR);
+      drawRect(cx - 14, y - 48, 4, 6, HAIR);
+      drawRect(cx + 10, y - 48, 4, 6, HAIR);
+      drawRect(cx - 10, y - 58, 4, 4, HAIR);
+      drawRect(cx - 4, y - 59, 4, 3, HAIR);
+      drawRect(cx + 2, y - 59, 4, 3, HAIR);
+      drawRect(cx + 6, y - 58, 4, 4, HAIR);
+
+      // face
+      drawRect(cx - 5, y - 48, 2, 3, CUFF);
+      drawRect(cx + 3, y - 48, 2, 3, CUFF);
+      drawRect(cx - 2, y - 43, 4, 2, CUFF);
+
+      // orange cone hat
+      drawRect(cx - 1, y - 72, 2, 3, HAT);
+      drawRect(cx - 2, y - 69, 4, 3, HAT);
+      drawRect(cx - 3, y - 66, 6, 3, HAT);
+      drawRect(cx - 4, y - 63, 8, 3, HAT);
+      drawRect(cx - 5, y - 60, 10, 3, HAT);
+      drawRect(cx - 6, y - 57, 12, 3, HAT);
+
+      // fluffy white sash (diagonal, left shoulder to right hip)
+      drawRect(cx - 16, y - 40, 10, 5, SASH);
+      drawRect(cx - 18, y - 38, 6, 4, SASH);
+      drawRect(cx - 14, y - 36, 10, 5, SASH);
+      drawRect(cx - 10, y - 33, 10, 5, SASH);
+      drawRect(cx - 6, y - 30, 10, 5, SASH);
+      drawRect(cx - 2, y - 27, 10, 5, SASH);
+      drawRect(cx + 2, y - 24, 10, 5, SASH);
+      drawRect(cx + 6, y - 21, 10, 5, SASH);
+      drawRect(cx + 8, y - 18, 8, 4, SASH);
+      // sash volume / shading
+      drawRect(cx - 12, y - 37, 4, 3, SASH_S);
+      drawRect(cx - 4, y - 31, 4, 3, SASH_S);
+      drawRect(cx + 4, y - 25, 4, 3, SASH_S);
+      drawRect(cx + 10, y - 19, 3, 2, SASH_S);
+      // jagged fluffy edges
+      drawRect(cx - 19, y - 41, 3, 3, SASH);
+      drawRect(cx - 8, y - 41, 3, 3, SASH);
+      drawRect(cx - 15, y - 34, 3, 3, SASH);
+      drawRect(cx + 1, y - 28, 3, 3, SASH);
+      drawRect(cx + 12, y - 22, 3, 3, SASH);
+      drawRect(cx + 14, y - 16, 3, 3, SASH);
+
+      // pocket square hint on coat
+      drawRect(cx + 8, y - 36, 4, 3, SASH);
+      // sparkle (bottom-right of sprite)
+      drawRect(cx + 18, y - 6, 2, 2, SASH);
+      drawRect(cx + 16, y - 4, 2, 2, SASH);
+      drawRect(cx + 20, y - 4, 2, 2, SASH);
+      drawRect(cx + 18, y - 2, 2, 2, SASH);
     }
 
     function drawHUD() {
