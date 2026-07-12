@@ -391,7 +391,7 @@
   <button id="menu-back-btn" type="button" aria-label="Back to menu" aria-hidden="true">← MENU</button>
   <button id="mute-btn" title="Звук вкл/выкл">🔊</button>
   <div id="mobile-controls" aria-hidden="true">
-    <div id="boost-btn" role="button" aria-label="Boost">BOOST</div>
+    <div id="boost-btn" role="button" aria-label="Boost">SHIFT SPEED</div>
     <div id="move-pad" aria-label="Move">
       <div class="move-btn" id="btn-left" role="button" aria-label="Left">◀</div>
       <div class="move-btn" id="btn-right" role="button" aria-label="Right">▶</div>
@@ -569,7 +569,10 @@
     let frame = 0;
     let spawnTimer = 0;
     let speed = 2.2;
+    let targetSpeed = 2.2;
     let pastries = [];
+    let balls = [];
+    let confetti = [];
     let audioCtx = null;
     let difficulty = 'normal';
     let energy = 100;
@@ -579,6 +582,9 @@
     let level = 1;
     let levelFlashTimer = 0;
     let levelFlashLifeRestored = false;
+    let playerUniform = 'normal';
+    let playerUniformUntil = 0;
+    let nextBallSpawnAt = 0;
     let leaderboard = [];
     let lbTotal = 0;
     let lbHasMore = false;
@@ -793,7 +799,20 @@
       }
     }
 
+    const PLAYER_DRAW_OFFSET_Y = 36;
+    const BALL_SPAWN_INTERVAL_MS = 10000;
+    const UNIFORM_BOOST_DURATION_MS = 5000;
+    const CONFETTI_COLORS = ['#f7d51d', '#e74c3c', '#6bb8e8', '#5fb85f', '#ffffff'];
+    const BALL_SVG_SRC = 'data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pg0KPCEtLSBVcGxvYWRlZCB0bzogU1ZHIFJlcG8sIHd3dy5zdmdyZXBvLmNvbSwgR2VuZXJhdG9yOiBTVkcgUmVwbyBNaXhlciBUb29scyAtLT4NCjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+DQo8c3ZnIGZpbGw9IiMwMDAwMDAiIHZlcnNpb249IjEuMSIgaWQ9IkNhcGFfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgDQoJIHdpZHRoPSI4MDBweCIgaGVpZ2h0PSI4MDBweCIgdmlld0JveD0iMCAwIDk4MCA5ODAiIHhtbDpzcGFjZT0icHJlc2VydmUiPg0KPGc+DQoJPGc+DQoJCTxwYXRoIGQ9Ik04MzYuNSwxNDMuNWMtNDUtNDUtOTcuNC04MC4zLTE1NS43LTEwNUM2MjAuMywxMyw1NTYuMSwwLDQ5MCwwUzM1OS43LDEzLDI5OS4zLDM4LjVjLTU4LjQsMjQuNy0xMTAuOCw2MC0xNTUuNywxMDUNCgkJCXMtODAuMyw5Ny40LTEwNSwxNTUuN0MxMywzNTkuNywwLDQyMy45LDAsNDkwczEzLDEzMC4zLDM4LjUsMTkwLjdjMjQuNyw1OC4zOTksNjAsMTEwLjgsMTA1LDE1NS43YzQ1LDQ0Ljg5OSw5Ny40LDgwLjMsMTU1LjcsMTA1DQoJCQlDMzU5LjcsOTY3LDQyMy45LDk4MCw0OTAsOTgwczEzMC4zLTEzLDE5MC43LTM4LjVjNTguMzk5LTI0LjcsMTEwLjgtNjAsMTU1LjctMTA1YzQ0Ljg5OS00NSw4MC4zLTk3LjQsMTA1LTE1NS43DQoJCQlDOTY3LDYyMC4zLDk4MCw1NTYuMSw5ODAsNDkwcy0xMy0xMzAuMy0zOC41LTE5MC43QzkxNi44LDI0MC45LDg4MS41LDE4OC41LDgzNi41LDE0My41eiBNOTEzLjksNjY5DQoJCQljLTcuNCwxNy41LTE1LjgwMSwzNC40LTI1LjIsNTAuN2wtMy40LTEyLjljLTEuNi02LjEtOC0xMC4zLTE0LjMtOS4zOTlsLTE4Ni40LDI3LjhjLTYuMywwLjg5OS0xMy4zOTksNi4zOTktMTUuOCwxMi4yTDU5NSw5MTAuOQ0KCQkJYy0yLjUsNS44LDAsMTMuMSw1LjUsMTYuMTk5bDExLjYsNi42MDFDNTcyLjYsOTQ0LjUsNTMxLjcsOTUwLDQ5MCw5NTBzLTgyLjYtNS41LTEyMi4xLTE2LjRsMTEuNi02LjZjNS41LTMuMSw4LTEwLjQsNS41LTE2LjINCgkJCWwtNzMuOC0xNzMuNWMtMi41LTUuOC05LjYwMS0xMS4zLTE1LjgtMTIuMkwxMDksNjk3LjRjLTYuMy0wLjktMTIuNywzLjMtMTQuMyw5LjM5OWwtMy40LDEyLjljLTkuNC0xNi4zLTE3LjgtMzMuMi0yNS4yLTUwLjcNCgkJCWMtMTkuNi00Ni4zLTMxLjMtOTUtMzQuOS0xNDUuMmwxMCw4LjdjNC44LDQuMiwxMi40LDQsMTcuMS0wLjJMMTk3LDQwNC42YzQuNy00LjMsNy40LTEyLjgsNi4yLTE5bC0zNi40LTE4NQ0KCQkJYy0xLjItNi4yLTcuMy0xMC44LTEzLjYtMTAuM2wtMTMuMiwxLjFjNy44LTkuMiwxNi4xLTE4LjEsMjQuNy0yNi43QzIwNywxMjIuNSwyNTYuMiw4OS4zLDMxMSw2Ni4xYzEuNC0wLjYsMi44LTEuMiw0LjItMS44DQoJCQlMMzEwLDc2LjdjLTIuNSw1LjgsMCwxMy4xLDUuNiwxNi4yTDQ4MCwxODVjNS41LDMuMSwxNC41LDMuMSwyMCwwbDE2NC41LTkyLjFjNS41LTMuMSw4LTEwLjMsNS42LTE2LjJMNjY0LjksNjQuNA0KCQkJYzEuMzk5LDAuNiwyLjgsMS4yLDQuMTk5LDEuOGM1NC44MDEsMjMuMiwxMDQsNTYuMywxNDYuMiw5OC42YzguNjAxLDguNiwxNi44LDE3LjUsMjQuNywyNi43bC0xMy4yLTEuMQ0KCQkJYy02LjMtMC41LTEyLjM5OSw0LjEtMTMuNiwxMC4zbC0zNi40LDE4NWMtMS4yLDYuMiwxLjYwMSwxNC43LDYuMiwxOWwxMzguNywxMjcuNmM0LjcsNC4zLDEyLjMsNC40LDE3LjEsMC4ybDEwLTguNw0KCQkJQzk0NS4yLDU3NCw5MzMuNSw2MjIuNyw5MTMuOSw2Njl6Ii8+DQoJCTxwYXRoIGQ9Ik02NjUuMiw0MjUuOEw0OTkuMywzMDUuMmMtNS4xLTMuNy0xMy4zOTktMy43LTE4LjYsMEwzMTQuOCw0MjUuOGMtNS4xLDMuNy03LjcsMTEuNjAxLTUuNywxNy42MDFsNjMuNCwxOTUNCgkJCWMyLDYsOC43LDEwLjg5OSwxNSwxMC44OTloMjA1LjFjNi4zMDEsMCwxMy4xMDEtNC44OTksMTUtMTAuODk5bDYzLjQtMTk1QzY3Mi45LDQzNy40LDY3MC4zLDQyOS41LDY2NS4yLDQyNS44eiIvPg0KCTwvZz4NCjwvZz4NCjwvc3ZnPg==';
+    const ballImage = new Image();
+    ballImage.src = BALL_SVG_SRC;
+
+    function nowMs() {
+      return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    }
+
     leaderboard = loadLeaderboardLocal();
+
 
      const DIFFICULTY = {
          easy: { baseInterval: 99, minInterval: 60, decreasePerScore: 1.0, speedStart: 1.8, speedInc: 0.018, maxSpeed: 2.8 },
@@ -919,8 +938,20 @@
         y: -24,
         r: 17,
         angle: 0,
-        speed: speed + Math.random() * 0.8,
+        speedOffset: Math.random() * 0.8,
         spin: 0.06 + Math.random() * 0.05,
+      });
+      playFallSound();
+    }
+
+    function spawnBall() {
+      balls.push({
+        x: 24 + Math.random() * (W - 48),
+        y: -22,
+        r: 15,
+        angle: 0,
+        speedOffset: Math.random() * 0.5,
+        spin: 0.08 + Math.random() * 0.06,
       });
       playFallSound();
     }
@@ -931,7 +962,10 @@
       frame = 0;
       spawnTimer = 0;
       speed = DIFFICULTY[difficulty].speedStart;
+      targetSpeed = speed;
       pastries = [];
+      balls = [];
+      confetti = [];
       player.x = W / 2 - player.w / 2;
       energy = MAX_ENERGY;
       boosting = false;
@@ -940,6 +974,9 @@
       level = 1;
       levelFlashTimer = 0;
       levelFlashLifeRestored = false;
+      playerUniform = 'normal';
+      playerUniformUntil = 0;
+      nextBallSpawnAt = nowMs() + BALL_SPAWN_INTERVAL_MS;
     }
 
     function startGame() {
@@ -1070,20 +1107,89 @@
       ctx.restore();
     }
 
+    function drawBall(b) {
+      const { x, y, r, angle } = b;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#f2f0df';
+      ctx.fill();
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      if (ballImage.complete && ballImage.naturalWidth > 0) {
+        ctx.drawImage(ballImage, -r, -r, r * 2, r * 2);
+      } else {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.arc(0, 0, r * 0.32, 0, Math.PI * 2);
+        ctx.fill();
+        drawRect(-r * 0.78, -3, r * 0.34, 6, '#1a1a1a');
+        drawRect(r * 0.44, -3, r * 0.34, 6, '#1a1a1a');
+        drawRect(-3, -r * 0.78, 6, r * 0.34, '#1a1a1a');
+        drawRect(-3, r * 0.44, 6, r * 0.34, '#1a1a1a');
+      }
+
+      ctx.restore();
+    }
+
+    function spawnConfetti(x, y) {
+      for (let i = 0; i < 52; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const force = 2.5 + Math.random() * 5.5;
+        confetti.push({
+          x,
+          y,
+          vx: Math.cos(angle) * force,
+          vy: Math.sin(angle) * force - 2,
+          size: 3 + Math.random() * 4,
+          rot: Math.random() * Math.PI,
+          spin: (Math.random() - 0.5) * 0.35,
+          life: 70 + Math.random() * 35,
+          color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        });
+      }
+    }
+
+    function drawConfetti() {
+      for (const c of confetti) {
+        ctx.save();
+        ctx.translate(c.x, c.y);
+        ctx.rotate(c.rot);
+        ctx.globalAlpha = Math.max(0, Math.min(1, c.life / 40));
+        drawRect(-c.size / 2, -c.size / 2, c.size, Math.max(2, c.size * 0.65), c.color);
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+    }
+
     function drawTrail() {
       for (const t of trail) {
         const cx = t.x + player.w / 2;
-        const y = GROUND_Y;
+        const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
         ctx.globalAlpha = t.alpha;
-        drawRect(cx - 17, y - 42, 34, 68, '#f7d51d');
+        drawRect(cx - 17, y - 72, 34, 72, '#f7d51d');
         ctx.globalAlpha = 1;
       }
     }
 
-    function drawPlayer() {
-      const x = player.x;
-      const y = GROUND_Y;
-      const cx = x + player.w / 2;
+    function drawPlayerLegacy() {
+      const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
+      const cx = player.x + player.w / 2;
+      const uniformIsYellow = playerUniform === 'yellow';
+      const HAT = '#e66119';
+      const HAIR = '#5d3a1a';
+      const SKIN = '#e8c1a0';
+      const COAT = uniformIsYellow ? '#d6a51f' : '#232b3b';
+      const SASH = uniformIsYellow ? '#ffe066' : '#ffffff';
+      const SASH_S = uniformIsYellow ? '#b98612' : '#c8c8c8';
+      const PANTS = '#d81e1e';
+      const BOOT = '#0a0a0a';
+      const CUFF = '#000000';
 
       // head
       drawRect(cx - 9, y - 32, 18, 16, '#f0b98a');
@@ -1109,8 +1215,8 @@
       drawRect(cx + 11, y - 16, 4, 2, '#111');
 
       // simple vest/body
-      drawRect(cx - 17, y - 14, 34, 20, '#2148c8');
-      drawRect(cx - 3, y - 14, 6, 20, '#f7d51d');
+      drawRect(cx - 17, y - 14, 34, 20, COAT);
+      drawRect(cx - 3, y - 14, 6, 20, SASH);
 
       // basket
       drawRect(cx - 22, y + 6, 44, 10, '#8b4513');
@@ -1118,11 +1224,118 @@
       drawRect(cx - 20, y + 22, 40, 4, '#5a2d0c');
     }
 
+    function drawPlayer() {
+      const y = GROUND_Y + PLAYER_DRAW_OFFSET_Y;
+      const cx = player.x + player.w / 2;
+      const uniformIsYellow = playerUniform === 'yellow';
+      const HAT = '#e66119';
+      const HAIR = '#5d3a1a';
+      const SKIN = '#e8c1a0';
+      const COAT = uniformIsYellow ? '#d6a51f' : '#232b3b';
+      const SASH = uniformIsYellow ? '#ffe066' : '#ffffff';
+      const SASH_S = uniformIsYellow ? '#b98612' : '#c8c8c8';
+      const PANTS = '#d81e1e';
+      const BOOT = '#0a0a0a';
+      const CUFF = '#000000';
+
+      // boots (feet on ground)
+      drawRect(cx - 12, y - 8, 10, 8, BOOT);
+      drawRect(cx + 2, y - 8, 10, 8, BOOT);
+      drawRect(cx - 14, y - 2, 6, 2, BOOT);
+      drawRect(cx + 8, y - 2, 6, 2, BOOT);
+
+      // red pants
+      drawRect(cx - 9, y - 18, 8, 12, PANTS);
+      drawRect(cx + 1, y - 18, 8, 12, PANTS);
+
+      // coat body (A-line)
+      drawRect(cx - 14, y - 40, 28, 26, COAT);
+      drawRect(cx - 16, y - 22, 32, 10, COAT);
+      drawRect(cx - 17, y - 16, 34, 4, COAT);
+
+      // arms + black ruffled cuffs + hands
+      drawRect(cx - 20, y - 38, 7, 16, COAT);
+      drawRect(cx + 13, y - 38, 7, 16, COAT);
+      drawRect(cx - 22, y - 24, 10, 6, CUFF);
+      drawRect(cx - 23, y - 25, 3, 3, CUFF);
+      drawRect(cx - 14, y - 25, 3, 3, CUFF);
+      drawRect(cx - 24, y - 22, 3, 3, CUFF);
+      drawRect(cx + 12, y - 24, 10, 6, CUFF);
+      drawRect(cx + 11, y - 25, 3, 3, CUFF);
+      drawRect(cx + 20, y - 25, 3, 3, CUFF);
+      drawRect(cx + 21, y - 22, 3, 3, CUFF);
+      drawRect(cx - 20, y - 18, 5, 4, SKIN);
+      drawRect(cx + 15, y - 18, 5, 4, SKIN);
+
+      // white collar
+      drawRect(cx - 5, y - 42, 10, 3, SASH);
+      drawRect(cx - 6, y - 41, 3, 3, SASH);
+      drawRect(cx + 3, y - 41, 3, 3, SASH);
+
+      // head
+      drawRect(cx - 8, y - 54, 16, 14, SKIN);
+
+      // curly brown hair
+      drawRect(cx - 11, y - 56, 22, 6, HAIR);
+      drawRect(cx - 13, y - 52, 5, 8, HAIR);
+      drawRect(cx + 8, y - 52, 5, 8, HAIR);
+      drawRect(cx - 14, y - 48, 4, 6, HAIR);
+      drawRect(cx + 10, y - 48, 4, 6, HAIR);
+      drawRect(cx - 10, y - 58, 4, 4, HAIR);
+      drawRect(cx - 4, y - 59, 4, 3, HAIR);
+      drawRect(cx + 2, y - 59, 4, 3, HAIR);
+      drawRect(cx + 6, y - 58, 4, 4, HAIR);
+
+      // face
+      drawRect(cx - 5, y - 48, 2, 3, CUFF);
+      drawRect(cx + 3, y - 48, 2, 3, CUFF);
+      drawRect(cx - 2, y - 43, 4, 2, CUFF);
+
+      // orange cone hat
+      drawRect(cx - 1, y - 72, 2, 3, HAT);
+      drawRect(cx - 2, y - 69, 4, 3, HAT);
+      drawRect(cx - 3, y - 66, 6, 3, HAT);
+      drawRect(cx - 4, y - 63, 8, 3, HAT);
+      drawRect(cx - 5, y - 60, 10, 3, HAT);
+      drawRect(cx - 6, y - 57, 12, 3, HAT);
+
+      // fluffy white sash (diagonal, left shoulder to right hip)
+      drawRect(cx - 16, y - 40, 10, 5, SASH);
+      drawRect(cx - 18, y - 38, 6, 4, SASH);
+      drawRect(cx - 14, y - 36, 10, 5, SASH);
+      drawRect(cx - 10, y - 33, 10, 5, SASH);
+      drawRect(cx - 6, y - 30, 10, 5, SASH);
+      drawRect(cx - 2, y - 27, 10, 5, SASH);
+      drawRect(cx + 2, y - 24, 10, 5, SASH);
+      drawRect(cx + 6, y - 21, 10, 5, SASH);
+      drawRect(cx + 8, y - 18, 8, 4, SASH);
+      // sash volume / shading
+      drawRect(cx - 12, y - 37, 4, 3, SASH_S);
+      drawRect(cx - 4, y - 31, 4, 3, SASH_S);
+      drawRect(cx + 4, y - 25, 4, 3, SASH_S);
+      drawRect(cx + 10, y - 19, 3, 2, SASH_S);
+      // jagged fluffy edges
+      drawRect(cx - 19, y - 41, 3, 3, SASH);
+      drawRect(cx - 8, y - 41, 3, 3, SASH);
+      drawRect(cx - 15, y - 34, 3, 3, SASH);
+      drawRect(cx + 1, y - 28, 3, 3, SASH);
+      drawRect(cx + 12, y - 22, 3, 3, SASH);
+      drawRect(cx + 14, y - 16, 3, 3, SASH);
+
+      // pocket square hint on coat
+      drawRect(cx + 8, y - 36, 4, 3, SASH);
+      // sparkle (bottom-right of sprite)
+      drawRect(cx + 18, y - 6, 2, 2, SASH);
+      drawRect(cx + 16, y - 4, 2, 2, SASH);
+      drawRect(cx + 20, y - 4, 2, 2, SASH);
+      drawRect(cx + 18, y - 2, 2, 2, SASH);
+    }
+
     function drawHUD() {
       ctx.fillStyle = '#fff';
-      ctx.font = '20px "Press Start 2P"';
+      ctx.font = '40px "Press Start 2P"';
       ctx.textAlign = 'left';
-      ctx.fillText('♥'.repeat(lives), 12, 36);
+      ctx.fillText('♥'.repeat(lives), 12, 60);
 
       ctx.textAlign = 'center';
       ctx.fillStyle = '#6bb8e8';
@@ -1131,12 +1344,12 @@
 
       ctx.textAlign = 'right';
       ctx.fillStyle = '#f7d51d';
-      ctx.font = '20px "Press Start 2P"';
-      ctx.fillText(String(score), W - 12, 36);
+      ctx.font = '40px "Press Start 2P"';
+      ctx.fillText(String(score), W - 12, 60);
       ctx.textAlign = 'left';
 
       // energy bar
-      const barX = 12, barY = 48, barW = 220, barH = 16;
+      const barX = 12, barY = 76, barW = 220, barH = 16;
       drawRect(barX - 4, barY - 4, barW + 8, barH + 8, '#1a0f08');
       drawRect(barX, barY, barW, barH, '#3a2010');
       const fillW = Math.max(0, (energy / MAX_ENERGY) * barW);
@@ -1310,6 +1523,10 @@
       }
     }
 
+    function updateFallSpeed() {
+      speed += (targetSpeed - speed) * SPEED_EASING;
+    }
+
     function updatePastries() {
       const basketLeft = player.x + 4;
       const basketRight = player.x + player.w - 4;
@@ -1317,7 +1534,7 @@
 
       for (let i = pastries.length - 1; i >= 0; i--) {
         const p = pastries[i];
-        p.y += p.speed;
+        p.y += speed + p.speedOffset;
         p.angle += p.spin;
 
         if (p.y + p.r >= basketTop && p.y - p.r <= GROUND_Y + 22) {
@@ -1326,7 +1543,7 @@
             playCatchSound();
             pastries.splice(i, 1);
             const cfg = DIFFICULTY[difficulty];
-            speed = Math.min(cfg.maxSpeed, speed + cfg.speedInc);
+            targetSpeed = Math.min(cfg.maxSpeed, targetSpeed + cfg.speedInc);
             continue;
           }
         }
@@ -1340,6 +1557,56 @@
       }
     }
 
+    function updateBalls() {
+      const basketLeft = player.x + 4;
+      const basketRight = player.x + player.w - 4;
+      const basketTop = GROUND_Y + 2;
+
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+        b.y += Math.max(2.4, speed * 0.9) + b.speedOffset;
+        b.angle += b.spin;
+
+        if (b.y + b.r >= basketTop && b.y - b.r <= GROUND_Y + 22) {
+          if (b.x >= basketLeft && b.x <= basketRight) {
+            playerUniform = 'yellow';
+            playerUniformUntil = nowMs() + UNIFORM_BOOST_DURATION_MS;
+            spawnConfetti(b.x, b.y);
+            playCatchSound();
+            balls.splice(i, 1);
+            continue;
+          }
+        }
+
+        if (b.y - b.r > H) {
+          balls.splice(i, 1);
+        }
+      }
+    }
+
+    function updateUniformTimer() {
+      if (playerUniform !== 'yellow') return;
+      if (nowMs() >= playerUniformUntil) {
+        playerUniform = 'normal';
+        playerUniformUntil = 0;
+      }
+    }
+
+    function updateConfetti() {
+      for (let i = confetti.length - 1; i >= 0; i--) {
+        const c = confetti[i];
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.16;
+        c.vx *= 0.985;
+        c.rot += c.spin;
+        c.life--;
+        if (c.life <= 0 || c.y > H + 20) {
+          confetti.splice(i, 1);
+        }
+      }
+    }
+
     function updateSpawning() {
       frame++;
       spawnTimer++;
@@ -1348,6 +1615,10 @@
       if (spawnTimer >= interval) {
         spawnTimer = 0;
         spawnPastry();
+      }
+      if (nowMs() >= nextBallSpawnAt) {
+        spawnBall();
+        nextBallSpawnAt = nowMs() + BALL_SPAWN_INTERVAL_MS;
       }
     }
 
@@ -1366,17 +1637,23 @@
     function update() {
       if (!running) return;
       updatePlayer();
+      updateFallSpeed();
       updateSpawning();
+      updateBalls();
       updatePastries();
+      updateUniformTimer();
+      updateConfetti();
       updateLevel();
     }
 
     function draw() {
       drawBackground();
       for (const p of pastries) drawPastry(p);
+      for (const b of balls) drawBall(b);
       drawTrail();
       drawPlayer();
       drawHUD();
+      drawConfetti();
     }
 
     function loop() {
